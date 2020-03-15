@@ -1,0 +1,14 @@
+[package]
+name = "lisper"
+version = "0.1.0"
+authors = ["vlabo <vladdocan@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+nom = { version = "5.1.1", optional = true } 
+
+[features]
+default = ["nom"]
+#custom = []
