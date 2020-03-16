@@ -8,64 +8,115 @@ fn parse_value(value: &str) -> LispValue {
     if let Ok(f) = value.parse::<f64>() {
         return LispValue::Float(f);
     }
-    
+
     if value == "false" {
         return LispValue::Boolean(false);
     } else if value == "true" {
         return LispValue::Boolean(true);
     }
 
+    LispValue::Name(value.to_string())
+}
 
-    LispValue::String(value.to_string())
+fn find_endline(code: &[char]) -> usize {
+    let mut count = 0;
+    for c in code {
+        if *c == '\n' {
+            return count;
+        }
+        count += 1;
+    }
+    return count;
+}
+
+fn read_argument(code: &[char]) -> (LispValue, usize) {
+    let mut arg = String::new();
+    let mut quate_open = false;
+    let mut is_string = false;
+    let mut size = 0;
+    for c in code {
+        match c {
+            '(' | ')' => {
+                    if quate_open {
+                        arg.push(*c);
+                    } else {
+                        size -= 1;
+                        break;
+                    }
+                },
+            '"' => {
+                if quate_open {
+                    break;
+                }
+                quate_open = true;
+                is_string = true;
+            },
+            '\n' => {
+                break;
+            },
+            ' ' | '\t' => {
+                if quate_open {
+                    arg.push(*c);
+                } else {
+                    break;
+                }
+            },
+            ';' => {
+                if quate_open {
+                    arg.push(*c);
+                } else {
+                    size -= 1;
+                    break;
+                }
+            }
+            _ => {
+                arg.push(*c);
+            },
+        }
+        size += 1;
+    }
+    if is_string {
+        return (LispValue::String(arg), size);
+    }
+
+    (parse_value(&arg), size)
 }
 
 fn parse_function(code: &[char]) -> (LispValue, usize) {
     let mut is_open = false;
-    let mut i = 0;
-    let mut current_argument = String::new();
+    let mut read_chars_count = 0;
     let mut arguments = Vec::new();
-    while i < code.len() {
-        match code[i] {
+    while read_chars_count < code.len() {
+        match code[read_chars_count] {
             '(' => {
                 if is_open {
-                    let (value, count) = parse_function(&code[i..]);
+                    let (value, count) = parse_function(&code[read_chars_count..]);
                     arguments.push(value);
-                    i += count;
+                    read_chars_count += count;
                 }
                 is_open = true;
             },
             ')' => {
-                if current_argument.len() > 0 {
-                    if arguments.is_empty() {
-                        let value = LispValue::Name(current_argument);
-                        arguments.push(value);
-                    } else {
-                        let value = parse_value(&current_argument);
-                        arguments.push(value);
-                    }
-                }
                 break;
             },
-            ' ' => {
-                if current_argument.len() > 0 {
-                    if arguments.is_empty() {
-                        let value = LispValue::Name(current_argument);
-                        arguments.push(value);
-                    } else {
-                        let value = parse_value(&current_argument);
-                        arguments.push(value);
-                    }
-                    current_argument = String::new();
+            ';' => {
+                read_chars_count += 1;
+                if code[read_chars_count] == ';' {
+                    let count = find_endline(code);
+                    read_chars_count += count;
                 }
             },
+            ' ' | '\t' | '\n' => {},
             _ => {
-                current_argument.push(code[i]);
+                let (value, count) = read_argument(&code[read_chars_count..]);
+                arguments.push(value);
+                read_chars_count += count;
             }
         }
-        i += 1;
+        read_chars_count += 1;
     }
 
-    (LispValue::Function(arguments), i)
+    (LispValue::Function(arguments), read_chars_count)
 }
 
 fn split_functions(code: &[char]) -> Vec<&[char]> {
@@ -102,6 +153,5 @@ pub fn parse(code: &str) -> Option<Vec<LispValue>> {
         let (value, _) = parse_function(f);
         lisp_functions.push(value);
     }
-    // println!("{:?}", lisp_functions);
     Some(lisp_functions) 
 }
