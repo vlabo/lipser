@@ -153,5 +153,60 @@ pub fn parse(code: &str) -> Option<Vec<LispValue>> {
         let (value, _) = parse_function(f);
         lisp_functions.push(value);
     }
+    
     Some(lisp_functions) 
+}
+
+pub fn parse_and_print(code: &str) {
+    let chars : Vec<char> = code.chars().collect();
+    let functions = split_functions(&chars[..]);
+    let mut lisp_functions = Vec::new();
+
+    for f in functions {
+        let (value, _) = parse_function(f);
+        lisp_functions.push(value);
+    }
+    
+    for f in &lisp_functions {
+        println!("{}", f);
+    }
+}
+
+#[cfg(test)]
+mod custom_parser_test {
+
+    use super::super::{LispValue, ToLispValue};
+    
+    macro_rules! lisp {
+        ($n:tt $($a:expr) *) => {
+            LispValue::Function(vec![LispValue::Name(stringify!($n).to_string()),
+            $(
+                {
+                    LispValue::get($a)
+                }, 
+            )*
+            ])
+        }
+    }
+
+    #[test]
+    fn function_call_test() {
+        if let Some(result) = super::parse("(+ 3 4 5)") {
+            assert_eq!(result, vec![lisp!(+ 3 4 5)]);
+        } else {
+            panic!("Parse retern None")
+        }
+
+        if let Some(result) = super::parse("(+ 3.0 4.0 5.0)") {
+            assert_eq!(result, vec![lisp!(+ 3.0 4.0 5.0)]);
+        } else {
+            panic!("Parse retern None")
+        }
+
+        if let Some(result) = super::parse("(print \"Test\")") {
+            assert_eq!(result, vec![lisp!(print "Test")]);
+        } else {
+            panic!("Parse retern None")
+        }
+    }
 }
