@@ -63,6 +63,12 @@ impl ToLispValue<bool> for LispValue {
     }
 }
 
+impl ToLispValue<LispValue> for LispValue {
+    fn get(t: LispValue) -> LispValue {
+        t
+    }
+}
+
 #[cfg(feature = "custom")]
 pub fn parse(code: &str) -> Option<Vec<LispValue>> {
     custom_parser::parse(code)

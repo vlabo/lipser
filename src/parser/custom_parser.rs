@@ -176,37 +176,74 @@ pub fn parse_and_print(code: &str) {
 mod custom_parser_test {
 
     use super::super::{LispValue, ToLispValue};
+    use super::parse;
     
-    macro_rules! lisp {
+    macro_rules! lf {
         ($n:tt $($a:expr) *) => {
-            LispValue::Function(vec![LispValue::Name(stringify!($n).to_string()),
+            LispValue::Function(vec![ln!($n),
             $(
-                {
-                    LispValue::get($a)
-                }, 
+                    LispValue::get($a),
             )*
             ])
+        };
+
+    }
+
+    macro_rules! vlf {
+        ($n:tt $($a:expr) *) => {
+            vec!(lf!($n $($a)*))
+        }
+    }
+
+    macro_rules! ln {
+        ($n:tt) => {
+            LispValue::Name(stringify!($n).to_string())
         }
     }
 
     #[test]
-    fn function_call_test() {
-        if let Some(result) = super::parse("(+ 3 4 5)") {
-            assert_eq!(result, vec![lisp!(+ 3 4 5)]);
+    fn function_call() {
+        if let Some(result) = parse("(+ 3 4 5)") {
+            assert_eq!(result, vlf!(+ 3 4 5));
         } else {
             panic!("Parse retern None")
         }
 
-        if let Some(result) = super::parse("(+ 3.0 4.0 5.0)") {
-            assert_eq!(result, vec![lisp!(+ 3.0 4.0 5.0)]);
+        if let Some(result) = parse("(/= 3.0 4.0 5.0)") {
+            assert_eq!(result, vlf!(/= 3.0 4.0 5.0));
         } else {
             panic!("Parse retern None")
         }
 
-        if let Some(result) = super::parse("(print \"Test\")") {
-            assert_eq!(result, vec![lisp!(print "Test")]);
+        if let Some(result) = parse("(print \"Test\")") {
+            assert_eq!(result, vlf!(print "Test"));
         } else {
             panic!("Parse retern None")
+        }
+    }
+
+    #[test]
+    fn function_inside_function() {
+        if let Some(result) = parse("(+ 3 (- 6 5))") {
+            assert_eq!(result, vlf!(+ 3 lf!(- 6 5)));
+        }
+
+        if let Some(result) = parse("(+ (- 6 5.0) (+ 3.0 4))") {
+            assert_eq!(result, vlf!(+ lf!(- 6 5.0) lf!(+ 3.0 4)));
+        }
+    }
+    
+    #[test]
+    fn function_definition() {
+        if let Some(result) = parse(r#"(defun println ()
+                                       (print " "))"#) {
+            assert_eq!(result, vlf!(defun ln!(println) LispValue::Function(vec![]) lf!(print " ")))
+        }
+
+        if let Some(result) = parse(r#"(defun square (n) 
+                                       (print "squaring")
+                                       (* n n))"#) {
+            assert_eq!(result, vlf!(defun ln!(square) lf!(n) lf!(print "squaring") lf!(* ln!(n) ln!(n))))
         }
     }
 }

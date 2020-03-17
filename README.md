@@ -7,10 +7,12 @@ A common lisp implementation in rust.
 ## TODO
 
 * Parser
-  * [ ] Custom parser
+  * [x] Custom parser
   * [ ] Syntax errors.
+  * [ ] Tests
 
 * Interpreter
   * [ ] Function/variable dose not exist error.
   * [ ] Scope variables and functions.
   * [ ] Exception handling.
+  * [ ] Tests
