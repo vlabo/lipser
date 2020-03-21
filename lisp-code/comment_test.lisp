@@ -1,11 +1,10 @@
 (defun println ()
     (print " "))
-; test
+;; test
 (print "variable declaration")
 (defvar PI (+ 2 1.14159))
 (print "PI = " PI)
-(print " ")
-
+(print " ") ; ll 
 (print "function definition")
 (defun square (n) 
     (print "squaring")

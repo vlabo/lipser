@@ -1,7 +1,6 @@
-#[cfg(feature = "nom")]
-mod nom_parser;
+use std::error::Error;
+use std::fmt;
 
-#[cfg(feature = "custom")]
 mod custom_parser;
 
 #[derive(Debug, PartialEq, Clone)]
@@ -16,7 +15,7 @@ pub enum LispValue {
 
 impl std::fmt::Display for LispValue {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-       match self {
+        match self {
             LispValue::String(s) => write!(f, "\"{}\"", s),
             LispValue::Boolean(true) => write!(f, "true"),
             LispValue::Boolean(false) => write!(f, "false"),
@@ -30,8 +29,7 @@ impl std::fmt::Display for LispValue {
                 }
                 write!(f, ")")
             }
-       } 
-
+        }
     }
 }
 
@@ -69,17 +67,63 @@ impl ToLispValue<LispValue> for LispValue {
     }
 }
 
-#[cfg(feature = "custom")]
-pub fn parse(code: &str) -> Option<Vec<LispValue>> {
+#[derive(Debug)]
+pub struct ParserError {
+    description: String,
+    position: usize,
+}
+
+impl ParserError {
+    fn new(description: &str, position: usize) -> Self {
+        Self {
+            description: description.to_string(),
+            position: position,
+        }
+    }
+}
+
+impl Error for ParserError {}
+
+impl fmt::Display for ParserError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Parser Error: {}, {}", self.description, self.position)
+    }
+}
+
+impl ParserError {
+    pub fn print(&self, code: &str) {
+        let mut current_position = 0;
+        let mut line = String::new();
+        let mut line_number : usize = 0;
+        for l in code.lines() {
+            line = l.to_string();
+            line_number += 1;
+            current_position += l.len() + 1;
+            if current_position > self.position {
+                break;
+            }
+        }
+        
+        let line_start = current_position - line.len() - 1;
+        println!("{} {}", self.position, line_start);
+        let line_pos = self.position - line_start;
+        let line_number_str = line_number.to_string();
+        println!("line_start: {}, line_number: {}, pos: {}", line_start, line_number, self.position);
+        let mut pointer = String::new();
+        for _ in 0..(line_pos + line_number_str.len() + 2) {
+            pointer.push(' ');
+        }
+        pointer.push('^');
+        
+        println!("{}: {}", line_number_str, line);
+        println!("{} {}", pointer, self.description);
+    }
+}
+
+pub fn parse(code: &str) -> Result<Vec<LispValue>, ParserError> {
     custom_parser::parse(code)
 }
 
-#[cfg(feature = "custom")]
 pub fn parse_and_print(code: &str) {
     custom_parser::parse_and_print(code);
-}
-
-#[cfg(feature = "nom")]
-pub fn parse(code: &str) -> Option<Vec<LispValue>> {
-    nom_parser::parse(code)
 }
