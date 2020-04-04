@@ -1,6 +1,6 @@
 # Lisper
 
-A lisp inspired script implementation in rust.
+A common lisp implementation in rust.
 
 *This is a hobby project. Don't expect to be finished soon.*
 

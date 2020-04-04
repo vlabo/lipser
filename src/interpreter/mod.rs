@@ -26,25 +26,20 @@ fn initialize_functions(state: &mut State) {
     state.add_function("mul".to_string(), Function::Div);
     state.add_function("print".to_string(), Function::Println);
     state.add_function("defvar".to_string(), Function::Defvar);
-    state.add_function("defun".to_string(), Function::Defun);
+	state.add_function("defun".to_string(), Function::Defun);
 }
 
 pub fn run(code: &str) {
     let mut state = State::new();
     initialize_functions(&mut state);
 
-    match parse(code) {
-        Ok(functions) => {
-            for f in functions {
-                if let LispValue::Function(mut arguments) = f {
-                    if let LispValue::Name(name) = arguments.remove(0) {
-                        execute_function(&mut state, name.as_str(), arguments);
-                    }
+    if let Some(functions) = parse(code) {
+        for f in functions {
+            if let LispValue::Function(mut arguments) = f {
+                if let LispValue::Name(name) = arguments.remove(0) {
+                    execute_function(&mut state, name.as_str(), arguments);
                 }
             }
-        }
-        Err(error) => {
-            error.print(code);
         }
     }
 }
